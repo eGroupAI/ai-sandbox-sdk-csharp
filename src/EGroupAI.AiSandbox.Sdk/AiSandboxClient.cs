@@ -21,7 +21,7 @@ public sealed class AiSandboxClient
 
     private async Task<JsonDocument> JsonAsync(string method, string path, object? body = null)
     {
-        var response = await SendAsync(method, path, body, "application/json");
+        using var response = await SendAsync(method, path, body, "application/json");
         var raw = await response.Content.ReadAsStringAsync();
         return JsonDocument.Parse(raw);
     }
@@ -38,12 +38,27 @@ public sealed class AiSandboxClient
                 request.Content = new StringContent(payload, Encoding.UTF8, "application/json");
             }
 
-            var response = await _http.SendAsync(request, accept == "text/event-stream"
-                ? HttpCompletionOption.ResponseHeadersRead
-                : HttpCompletionOption.ResponseContentRead);
-
-            if ((int)response.StatusCode is 429 or >= 500 and <= 599 && attempt < _maxRetries)
+            HttpResponseMessage response;
+            try
             {
+                response = await _http.SendAsync(request, accept == "text/event-stream"
+                    ? HttpCompletionOption.ResponseHeadersRead
+                    : HttpCompletionOption.ResponseContentRead);
+            }
+            catch (HttpRequestException) when (attempt < _maxRetries)
+            {
+                await Task.Delay(200 * (attempt + 1));
+                continue;
+            }
+            catch (TaskCanceledException) when (attempt < _maxRetries)
+            {
+                await Task.Delay(200 * (attempt + 1));
+                continue;
+            }
+
+            if (HttpRetryPolicy.ShouldRetryTransientHttpStatus(method, (int)response.StatusCode) && attempt < _maxRetries)
+            {
+                response.Dispose();
                 await Task.Delay(200 * (attempt + 1));
                 continue;
             }
@@ -51,7 +66,11 @@ public sealed class AiSandboxClient
             if (!response.IsSuccessStatusCode)
             {
                 var raw = await response.Content.ReadAsStringAsync();
-                throw new ApiException((int)response.StatusCode, raw);
+                string? trace = null;
+                if (response.Headers.TryGetValues("x-trace-id", out var values))
+                    trace = values.FirstOrDefault();
+                response.Dispose();
+                throw new ApiException((int)response.StatusCode, raw, trace);
             }
 
             return response;
@@ -72,7 +91,7 @@ public sealed class AiSandboxClient
 
     public async IAsyncEnumerable<string> SendChatStreamAsync(int agentId, object payload)
     {
-        var response = await SendAsync("POST", $"/agents/{agentId}/chat", payload, "text/event-stream");
+        using var response = await SendAsync("POST", $"/agents/{agentId}/chat", payload, "text/event-stream");
         await using var stream = await response.Content.ReadAsStreamAsync();
         using var reader = new StreamReader(stream);
         while (!reader.EndOfStream)

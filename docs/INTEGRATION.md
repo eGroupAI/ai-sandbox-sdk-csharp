@@ -7,10 +7,17 @@ This SDK is designed for low-change, low-touch customer integration.
 - Explicit timeout and retry controls.
 - Streaming chat support (`text/event-stream`).
 
+## Retry safety
+- **429 / 5xx** automatic retries apply only to **GET** and **HEAD**. **POST / PUT / PATCH** are not retried on those status codes to avoid duplicate side effects.
+- **HttpRequestException** and **TaskCanceledException** (e.g. timeouts) may still be retried for all methods, up to `maxRetries`.
+
 ## Install
 `dotnet add package EGroupAI.AiSandbox.Sdk`
 
 ## First Steps
-1. Configure `base_url` and `api_key`.
-2. Call `create_agent`.
-3. Create chat channel and send the first message.
+1. Construct `AiSandboxClient` with `baseUrl` and `apiKey`.
+2. Call `CreateAgentAsync(...)`.
+3. Create a chat channel with `CreateChatChannelAsync(...)` and send the first message with `SendChatAsync(...)` or `SendChatStreamAsync(...)`.
+
+## Errors
+- On HTTP errors, `ApiException` exposes `TraceId` when the server sends `x-trace-id`.
