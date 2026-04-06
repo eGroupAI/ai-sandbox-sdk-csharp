@@ -10,4 +10,11 @@ public static class HttpRetryPolicy
         return string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase)
             || string.Equals(method, "HEAD", StringComparison.OrdinalIgnoreCase);
     }
+
+    public static TimeSpan GetRetryDelay(int attempt)
+    {
+        var safeAttempt = Math.Max(1, attempt);
+        var delayMs = 200.0 * Math.Pow(2, safeAttempt - 1);
+        return TimeSpan.FromMilliseconds(Math.Min(2000.0, delayMs));
+    }
 }

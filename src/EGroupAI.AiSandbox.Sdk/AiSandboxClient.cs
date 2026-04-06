@@ -47,19 +47,19 @@ public sealed class AiSandboxClient
             }
             catch (HttpRequestException) when (attempt < _maxRetries)
             {
-                await Task.Delay(200 * (attempt + 1));
+                await Task.Delay(HttpRetryPolicy.GetRetryDelay(attempt + 1));
                 continue;
             }
             catch (TaskCanceledException) when (attempt < _maxRetries)
             {
-                await Task.Delay(200 * (attempt + 1));
+                await Task.Delay(HttpRetryPolicy.GetRetryDelay(attempt + 1));
                 continue;
             }
 
             if (HttpRetryPolicy.ShouldRetryTransientHttpStatus(method, (int)response.StatusCode) && attempt < _maxRetries)
             {
                 response.Dispose();
-                await Task.Delay(200 * (attempt + 1));
+                await Task.Delay(HttpRetryPolicy.GetRetryDelay(attempt + 1));
                 continue;
             }
 

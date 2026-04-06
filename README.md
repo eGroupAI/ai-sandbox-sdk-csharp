@@ -71,7 +71,8 @@ dotnet add package EGroupAI.AiSandbox.Sdk
 | --- | --- |
 | API Coverage | 11 operations (Agent / Chat / Knowledge Base) |
 | Stream Mode | `text/event-stream` with `[DONE]` handling |
-| Error Surface | `ApiException` with statusCode/responseBody |
+| Retry Safety | 429/5xx auto-retry for GET/HEAD + capped exponential backoff |
+| Error Surface | `ApiException` with statusCode/responseBody/traceId |
 | Validation | Production-host integration verified |
 
 ## Links

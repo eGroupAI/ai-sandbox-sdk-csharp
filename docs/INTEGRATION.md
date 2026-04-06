@@ -10,6 +10,7 @@ This SDK is designed for low-change, low-touch customer integration.
 ## Retry safety
 - **429 / 5xx** automatic retries apply only to **GET** and **HEAD**. **POST / PUT / PATCH** are not retried on those status codes to avoid duplicate side effects.
 - **HttpRequestException** and **TaskCanceledException** (e.g. timeouts) may still be retried for all methods, up to `maxRetries`.
+- Retry delay uses **exponential backoff** with a capped wait time.
 
 ## Install
 `dotnet add package EGroupAI.AiSandbox.Sdk`
