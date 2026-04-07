@@ -82,3 +82,7 @@ dotnet add package EGroupAI.AiSandbox.Sdk
 - [Integration Guide](docs/INTEGRATION.md)
 - [Quickstart Example](examples/Quickstart.cs)
 - [Repository](https://github.com/eGroupAI/ai-sandbox-sdk-csharp)
+
+## License
+
+This SDK is released under the Apache-2.0 license.
